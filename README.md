@@ -72,17 +72,17 @@ If the uploaded file does **not** match the category, an error will be returned.
 
 #### Upload any supported file:
 ```bash
-curl -F "file=@myphoto.jpg" http://yourdomain.com/api.php?route=upload
+curl -F "file=@myphoto.jpg" http://yourdomain.com/bit/upload
 ```
 
 #### Upload only an image:
 ```bash
-curl -F "file=@myphoto.jpg" http://yourdomain.com/api.php?route=upload/image
+curl -F "file=@myphoto.jpg" http://yourdomain.com/bit/upload/image
 ```
 
 #### Upload only an video:
 ```bash
-curl -F "file=@myphoto.jpg" http://yourdomain.com/api.php?route=upload/video
+curl -F "file=@myphoto.jpg" http://yourdomain.com/bit/upload/video
 ```
 
 ---
