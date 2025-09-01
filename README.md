@@ -59,6 +59,8 @@ It provides **indirect access** to content (real paths are hidden) and supports 
 | -3 | `EMPTY_FILE` | Uploaded file has no content. |
 | -4 | `INVALID_FORMAT` | The file format is not allowed. |
 | -6 | `MOVE_UPLOAD_ERROR` | Failed to move uploaded file to the destination folder. |
+| -8 | `AUDIO_NOT_FOUND` | Requested audio file does not exist on the server. |
+| -9 | `PDF_NOT_FOUND` | Requested pdf file does not exist on the server. |
 | -7 | `VIDEO_NOT_FOUND` | Requested video file does not exist on the server. |
 | -10 | `BAD_QUERY` | Bad or missing query parameter in the route. |
 | -11 | `METHOD_NOT_ALLOWED` | HTTP method not allowed for this route (e.g., GET on upload). |
