@@ -2,7 +2,7 @@
 
 **Developed by:** ArkanPardaz DevTeam  
 **Project started:** March 05, 2023  
-**Current Version:** v2.1.0 (September 2025)  
+**Current Version:** v2.2.0 (September 2025)  
 **PHP Requirement:** PHP 8.0 or higher  
 **Required Extensions:** `fileinfo` must be enabled  
 **Optional Requirements:** `FFMPEG` installed if video thumbnails are to be generated
