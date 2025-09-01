@@ -101,6 +101,7 @@ curl -F "file=@myphoto.jpg" http://yourdomain.com/api.php?route=upload/video
 | -7 | `VIDEO_NOT_FOUND` | Requested video file does not exist on the server. |
 | -10 | `BAD_QUERY` | Bad or missing query parameter in the route. |
 | -11 | `METHOD_NOT_ALLOWED` | HTTP method not allowed for this route (e.g., GET on upload). |
+| -12 | `ONLY_EXPECTED_CATEGORY_ALLOWED` | Only expected category files are allowed in this route. |
 | 0  | `FILE_NOT_UPLOADED` | No file was uploaded or `file` parameter missing in POST request. |
 
 ### 🔹 Notes
