@@ -50,6 +50,43 @@ It provides **indirect access** to content (real paths are hidden) and supports 
 
 ---
 
+## 📤 File Upload Endpoint
+
+### `POST /upload`  
+Upload any supported file type (`image`, `video`, `audio`, `pdf`).
+
+### `POST /upload/{category}`  
+Restrict upload to a specific category.
+
+#### Available Categories:
+- `image` → only image files (`.png`, `.jpg`, `.jpeg`)
+- `video` → only video files (`.mp4`, `.webm`, `.mov`)
+- `audio` → only audio files (`.mp3`, `.aac`, `.wav`, `.m4a`)
+- `pdf` → only PDF documents (`.pdf`)
+
+If the uploaded file does **not** match the category, an error will be returned.
+
+---
+
+### ✅ Examples
+
+#### Upload any supported file:
+```bash
+curl -F "file=@myphoto.jpg" http://yourdomain.com/api.php?route=upload
+```
+
+#### Upload only an image:
+```bash
+curl -F "file=@myphoto.jpg" http://yourdomain.com/api.php?route=upload/image
+```
+
+#### Upload only an video:
+```bash
+curl -F "file=@myphoto.jpg" http://yourdomain.com/api.php?route=upload/video
+```
+
+---
+
 ## ⚠️ Error Codes
 
 | Error Code | Meaning | Description |

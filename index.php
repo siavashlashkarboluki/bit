@@ -3,7 +3,7 @@
     - BiT Media Tools
     - Developed by ArkanPardaz (Siavash Lashkarboluki)
     - Project started: March 05, 2023
-    - Current Version: v2.1.0 (September 2025)
+    - Current Version: v2.2.0 (September 2025)
 
     - Description:
         BiT Media Tools is a **stand-alone PHP tool** for secure uploading, processing,
@@ -30,6 +30,9 @@
         * Documents: PDF
 
     - Changelog:
+        v2.2.0:
+            + Added support limited category upload (e.g., only images or only videos)
+            + Improved error handling and messages
         v2.1.0:
             + Added support for audio (MP3, AAC, WAV, M4A)
             + Added support for PDF documents
@@ -53,10 +56,10 @@ define("FFMPEG_IS_AVAILABLE", false);
 $upload_folder = __DIR__ . "/content/";
 
 $max_size = [
-    "image" => 10485760,   // 10MB
-    "video" => 104857600,  // 100MB
-    "audio" => 52428800,   // 50MB
-    "pdf"   => 20971520    // 20MB
+    "image" => 10485760,
+    "video" => 104857600,
+    "audio" => 52428800,
+    "pdf"   => 20971520
 ];
 
 $allowed_types = [
@@ -64,14 +67,14 @@ $allowed_types = [
     "image/jpeg",
     "video/mp4",
     "video/webm",
-    "video/quicktime", // mov
+    "video/quicktime",
     "application/pdf",
-    "audio/mpeg",      // mp3
-    "audio/aac",       // aac
-    "audio/wav",       // wav
-    "audio/x-wav",     // wav (alt)
-    "audio/mp4",       // m4a
-    "audio/x-m4a"      // m4a (alt)
+    "audio/mpeg",
+    "audio/aac",
+    "audio/wav",
+    "audio/x-wav",
+    "audio/mp4",
+    "audio/x-m4a"
 ];
 
 $file_name_prefix = null;
@@ -88,13 +91,13 @@ $value = $parts[2] ?? null;
 switch ($main) {
     case "upload":
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            upload();
+            upload($sub); // ✅ دسته‌بندی به صورت optional
         } else {
             sendError("Only POST allowed for upload", -11);
         }
         break;
 
-    case "i": // get image
+    case "i":
         if (!empty($sub)) {
             getImage($sub);
         } else {
@@ -102,7 +105,7 @@ switch ($main) {
         }
         break;
 
-    case "sw": // scale image width
+    case "sw":
         if (is_numeric($sub) && $sub > 100 && $sub < 4192 && !empty($value)) {
             resizeScaleWidth((int)$sub, $value);
         } else {
@@ -110,7 +113,7 @@ switch ($main) {
         }
         break;
 
-    case "v": // get video
+    case "v":
         if (!empty($sub)) {
             getVideo($sub);
         } else {
@@ -118,7 +121,7 @@ switch ($main) {
         }
         break;
 
-    case "a": // get audio
+    case "a":
         if (!empty($sub)) {
             getAudio($sub);
         } else {
@@ -126,7 +129,7 @@ switch ($main) {
         }
         break;
 
-    case "pdf": // get pdf
+    case "pdf":
         if (!empty($sub)) {
             getPDF($sub);
         } else {
@@ -140,7 +143,7 @@ switch ($main) {
 
 // ---------------- FUNCTIONS ---------------- //
 
-function upload()
+function upload($expected_category = null)
 {
     global $allowed_types, $max_size, $upload_folder;
 
@@ -165,7 +168,7 @@ function upload()
         sendError("The file format is not allowed", -4);
     }
 
-    // تعیین نوع فایل
+    // تشخیص دسته فایل
     if (strpos($mime, "image/") === 0) {
         $category = "image";
     } elseif (strpos($mime, "video/") === 0) {
@@ -178,12 +181,15 @@ function upload()
         sendError("Unsupported file type", -5);
     }
 
-    // بررسی حجم فایل
+    // ✅ بررسی اینکه دسته فایل با URL مطابقت دارد یا نه
+    if ($expected_category !== null && $expected_category !== $category) {
+        sendError("Only {$expected_category} files are allowed in this route", -12);
+    }
+
     if ($file['size'] > $max_size[$category]) {
         sendError("Max file size for {$category} is {$max_size[$category]} bytes", -2);
     }
 
-    // ساخت نام فایل نهایی
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     $base_name = fileNameFormatter(pathinfo($file['name'], PATHINFO_FILENAME));
     $final_file_name = $base_name . "." . $ext;
@@ -194,7 +200,6 @@ function upload()
 
     $final_path = $upload_folder . $final_file_name;
 
-    // ذخیره فایل
     if (move_uploaded_file($file['tmp_name'], $final_path)) {
 
         $response = [
@@ -203,7 +208,6 @@ function upload()
             "type" => $category
         ];
 
-        // اگر ویدئو بود => thumbnail بساز
         if ($category === "video" && FFMPEG_IS_AVAILABLE) {
             $thumb_file = $base_name . "_thumb.jpg";
             $thumb_path = $upload_folder . $thumb_file;
@@ -224,15 +228,14 @@ function upload()
     }
 }
 
+// بقیه توابع بدون تغییر:
 function getImage($file_name)
 {
     global $upload_folder;
-
     $path = $upload_folder . $file_name;
     if (!file_exists($path)) {
         $path = NOT_FOUND_IMAGE;
     }
-
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     if ($ext === "png") {
         header("Content-type: image/png");
@@ -242,7 +245,6 @@ function getImage($file_name)
         header("Content-type: image/png");
         $path = NOT_FOUND_IMAGE;
     }
-
     setCacheHeaders();
     readfile($path);
     exit;
@@ -251,19 +253,15 @@ function getImage($file_name)
 function getVideo($file_name)
 {
     global $upload_folder;
-
     $path = $upload_folder . $file_name;
     if (!file_exists($path)) {
         sendError("Video not found", -7);
     }
-
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     $mime = ($ext === "mov") ? "video/quicktime" : "video/" . $ext;
     header("Content-Type: {$mime}");
     header("Content-Length: " . filesize($path));
-
     setCacheHeaders();
-
     if (isset($_SERVER['HTTP_RANGE'])) {
         rangeDownload($path);
     } else {
@@ -275,12 +273,10 @@ function getVideo($file_name)
 function getAudio($file_name)
 {
     global $upload_folder;
-
     $path = $upload_folder . $file_name;
     if (!file_exists($path)) {
         sendError("Audio not found", -8);
     }
-
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     $mime_map = [
         "mp3" => "audio/mpeg",
@@ -288,13 +284,10 @@ function getAudio($file_name)
         "wav" => "audio/wav",
         "m4a" => "audio/mp4"
     ];
-
     $mime = $mime_map[$ext] ?? "application/octet-stream";
     header("Content-Type: {$mime}");
     header("Content-Length: " . filesize($path));
-
     setCacheHeaders();
-
     if (isset($_SERVER['HTTP_RANGE'])) {
         rangeDownload($path);
     } else {
@@ -306,16 +299,13 @@ function getAudio($file_name)
 function getPDF($file_name)
 {
     global $upload_folder;
-
     $path = $upload_folder . $file_name;
     if (!file_exists($path)) {
         sendError("PDF not found", -9);
     }
-
     header("Content-Type: application/pdf");
     header("Content-Length: " . filesize($path));
     setCacheHeaders();
-
     readfile($path);
     exit;
 }
@@ -323,14 +313,11 @@ function getPDF($file_name)
 function resizeScaleWidth($width, $file_name)
 {
     global $upload_folder;
-
     $path = $upload_folder . $file_name;
     if (!file_exists($path)) {
         $path = NOT_FOUND_IMAGE;
     }
-
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-
     if ($ext === "png") {
         $image = imagecreatefrompng($path);
         $img = imagescale($image, $width, -1);
@@ -352,7 +339,6 @@ function resizeScaleWidth($width, $file_name)
 }
 
 // ---------------- HELPERS ---------------- //
-
 function fileNameFormatter($file_name, $mode = 3)
 {
     global $file_name_prefix;
@@ -394,7 +380,6 @@ function rangeDownload($file)
     if (isset($_SERVER['HTTP_RANGE'])) {
         $c_start = $start;
         $c_end = $end;
-
         list(, $range) = explode('=', $_SERVER['HTTP_RANGE'], 2);
         if (strpos($range, ',') !== false) {
             header('HTTP/1.1 416 Requested Range Not Satisfiable');
